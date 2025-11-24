@@ -1,0 +1,554 @@
+<html>
+    <head>
+        <meta charset="GBK">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 900px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+             #config {
+                 float: left;
+                 width: 400px;
+                 height: 600px;
+             }
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="360度无死角覆盖">360度无死角覆盖</option>
+                                
+                                    <option value="doherty功率放大器">doherty功率放大器</option>
+                                
+                                    <option value="fmcw雷达信号处理算法">fmcw雷达信号处理算法</option>
+                                
+                                    <option value="全极化有源相控阵雷达系统架构">全极化有源相控阵雷达系统架构</option>
+                                
+                                    <option value="智能超表面赋能的通信感知一体化雷达架构">智能超表面赋能的通信感知一体化雷达架构</option>
+                                
+                                    <option value="汽车毫米波雷达天线">汽车毫米波雷达天线</option>
+                                
+                                    <option value="雷达研发细分领域">雷达研发细分领域</option>
+                                
+                                    <option value="雷达系统外场试验方法">雷达系统外场试验方法</option>
+                                
+                                    <option value="64通道相控阵天线">64通道相控阵天线</option>
+                                
+                                    <option value="77ghz车载雷达">77ghz车载雷达</option>
+                                
+                                    <option value="sige bicmos单片集成电路">sige bicmos单片集成电路</option>
+                                
+                                    <option value="dbscan聚类算法">dbscan聚类算法</option>
+                                
+                                    <option value="联合概率数据关联滤波器">联合概率数据关联滤波器</option>
+                                
+                                    <option value="doherty功率放大器设计">doherty功率放大器设计</option>
+                                
+                                    <option value="fmcw雷达信号处理算法优化">fmcw雷达信号处理算法优化</option>
+                                
+                                    <option value="hamming窗函数">hamming窗函数</option>
+                                
+                                    <option value="二次fft处理">二次fft处理</option>
+                                
+                                    <option value="信号处理领域">信号处理领域</option>
+                                
+                                    <option value="全息mimo雷达架构">全息mimo雷达架构</option>
+                                
+                                    <option value="功率效率提升40%">功率效率提升40%</option>
+                                
+                                    <option value="动态目标测试">动态目标测试</option>
+                                
+                                    <option value="多目标场景距离与速度测量">多目标场景距离与速度测量</option>
+                                
+                                    <option value="天线技术领域">天线技术领域</option>
+                                
+                                    <option value="射频硬件领域">射频硬件领域</option>
+                                
+                                    <option value="抗干扰测试">抗干扰测试</option>
+                                
+                                    <option value="智能反射面（isr）技术">智能反射面（isr）技术</option>
+                                
+                                    <option value="气象探测">气象探测</option>
+                                
+                                    <option value="汽车毫米波雷达天线优化">汽车毫米波雷达天线优化</option>
+                                
+                                    <option value="测试验证领域">测试验证领域</option>
+                                
+                                    <option value="粤港澳大湾区天气观测网">粤港澳大湾区天气观测网</option>
+                                
+                                    <option value="系统架构领域">系统架构领域</option>
+                                
+                                    <option value="通信感知一体化">通信感知一体化</option>
+                                
+                                    <option value="雷达射频前端">雷达射频前端</option>
+                                
+                                    <option value="雷达系统架构创新研究">雷达系统架构创新研究</option>
+                                
+                                    <option value="面向6g的智能超表面赋能的通信感知一体化雷达架构研究">面向6g的智能超表面赋能的通信感知一体化雷达架构研究</option>
+                                
+                                    <option value="gan工艺">gan工艺</option>
+                                
+                                    <option value="t/r组件设计">t/r组件设计</option>
+                                
+                                    <option value="一维卷积神经网络">一维卷积神经网络</option>
+                                
+                                    <option value="注意力机制">注意力机制</option>
+                                
+                                    <option value="传统雷达与通信系统">传统雷达与通信系统</option>
+                                
+                                    <option value="独立设计">独立设计</option>
+                                
+                                    <option value="信噪比10db">信噪比10db</option>
+                                
+                                    <option value="平均识别率95.2%">平均识别率95.2%</option>
+                                
+                                    <option value="智能超表面">智能超表面</option>
+                                
+                                    <option value="商用fpga">商用fpga</option>
+                                
+                                    <option value="信号处理板卡设计">信号处理板卡设计</option>
+                                
+                                    <option value="噪声系数≤8db">噪声系数≤8db</option>
+                                
+                                    <option value="接收通道">接收通道</option>
+                                
+                                    <option value="城市复杂交通场景">城市复杂交通场景</option>
+                                
+                                    <option value="目标跟踪连续性提升25%">目标跟踪连续性提升25%</option>
+                                
+                                    <option value="实测hrrp数据">实测hrrp数据</option>
+                                
+                                    <option value="10,000个样本">10,000个样本</option>
+                                
+                                    <option value="工作频率76-81ghz">工作频率76-81ghz</option>
+                                
+                                    <option value="发射通道输出功率≥12dbm">发射通道输出功率≥12dbm</option>
+                                
+                                    <option value="强风、高湿度环境">强风、高湿度环境</option>
+                                
+                                    <option value="防护等级设计">防护等级设计</option>
+                                
+                                    <option value="微通道液冷散热">微通道液冷散热</option>
+                                
+                                    <option value="结温控制">结温控制</option>
+                                
+                                    <option value="探测实验">探测实验</option>
+                                
+                                    <option value="电子干扰手段">电子干扰手段</option>
+                                
+                                    <option value="有源相控阵雷达">有源相控阵雷达</option>
+                                
+                                    <option value="外场动态性能测试">外场动态性能测试</option>
+                                
+                                    <option value="机械扫描气象雷达">机械扫描气象雷达</option>
+                                
+                                    <option value="船只晃动环境数据失真">船只晃动环境数据失真</option>
+                                
+                                    <option value="毫米波雷达">毫米波雷达</option>
+                                
+                                    <option value="pcb板级信号完整性仿真">pcb板级信号完整性仿真</option>
+                                
+                                    <option value="稀疏阵列天线技术">稀疏阵列天线技术</option>
+                                
+                                    <option value="减少t/r组件数量">减少t/r组件数量</option>
+                                
+                                    <option value="系统功耗">系统功耗</option>
+                                
+                                    <option value="降低30%">降低30%</option>
+                                
+                                    <option value="超表面编码优化算法">超表面编码优化算法</option>
+                                
+                                    <option value="基站与雷达信号协同处理">基站与雷达信号协同处理</option>
+                                
+                                    <option value="高分辨率距离像">高分辨率距离像</option>
+                                
+                                    <option value="传统识别方法稳健性不足">传统识别方法稳健性不足</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+            <div id="config"></div>
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"group": 2, "id": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "label": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "shape": "dot", "size": 7}, {"group": 3, "id": "doherty\u529f\u7387\u653e\u5927\u5668", "label": "doherty\u529f\u7387\u653e\u5927\u5668", "shape": "dot", "size": 30}, {"group": 3, "id": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "label": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "shape": "dot", "size": 30}, {"group": 3, "id": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "label": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "shape": "dot", "size": 30}, {"group": 3, "id": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "label": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "shape": "dot", "size": 30}, {"group": 3, "id": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "label": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "shape": "dot", "size": 30}, {"group": 3, "id": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "label": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "shape": "dot", "size": 30}, {"group": 3, "id": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "label": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "shape": "dot", "size": 30}, {"group": 3, "id": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "label": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "shape": "dot", "size": 7}, {"group": 4, "id": "77ghz\u8f66\u8f7d\u96f7\u8fbe", "label": "77ghz\u8f66\u8f7d\u96f7\u8fbe", "shape": "dot", "size": 1}, {"group": 4, "id": "sige bicmos\u5355\u7247\u96c6\u6210\u7535\u8def", "label": "sige bicmos\u5355\u7247\u96c6\u6210\u7535\u8def", "shape": "dot", "size": 1}, {"group": 5, "id": "dbscan\u805a\u7c7b\u7b97\u6cd5", "label": "dbscan\u805a\u7c7b\u7b97\u6cd5", "shape": "dot", "size": 1}, {"group": 5, "id": "\u8054\u5408\u6982\u7387\u6570\u636e\u5173\u8054\u6ee4\u6ce2\u5668", "label": "\u8054\u5408\u6982\u7387\u6570\u636e\u5173\u8054\u6ee4\u6ce2\u5668", "shape": "dot", "size": 1}, {"group": 3, "id": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "label": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "shape": "dot", "size": 7}, {"group": 3, "id": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "label": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "shape": "dot", "size": 7}, {"group": 3, "id": "hamming\u7a97\u51fd\u6570", "label": "hamming\u7a97\u51fd\u6570", "shape": "dot", "size": 7}, {"group": 3, "id": "\u4e8c\u6b21fft\u5904\u7406", "label": "\u4e8c\u6b21fft\u5904\u7406", "shape": "dot", "size": 7}, {"group": 3, "id": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "label": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "shape": "dot", "size": 7}, {"group": 3, "id": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "label": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "shape": "dot", "size": 8}, {"group": 3, "id": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "label": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "shape": "dot", "size": 7}, {"group": 3, "id": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "label": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "shape": "dot", "size": 7}, {"group": 3, "id": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "label": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "shape": "dot", "size": 7}, {"group": 3, "id": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "label": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "shape": "dot", "size": 7}, {"group": 3, "id": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "label": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "shape": "dot", "size": 7}, {"group": 3, "id": "\u6297\u5e72\u6270\u6d4b\u8bd5", "label": "\u6297\u5e72\u6270\u6d4b\u8bd5", "shape": "dot", "size": 7}, {"group": 3, "id": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "label": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "shape": "dot", "size": 7}, {"group": 3, "id": "\u6c14\u8c61\u63a2\u6d4b", "label": "\u6c14\u8c61\u63a2\u6d4b", "shape": "dot", "size": 7}, {"group": 3, "id": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "label": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "shape": "dot", "size": 7}, {"group": 3, "id": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "label": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "shape": "dot", "size": 7}, {"group": 3, "id": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "label": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "shape": "dot", "size": 7}, {"group": 3, "id": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "label": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "shape": "dot", "size": 7}, {"group": 3, "id": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "label": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "shape": "dot", "size": 7}, {"group": 3, "id": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "label": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "shape": "dot", "size": 7}, {"group": 3, "id": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "label": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "shape": "dot", "size": 7}, {"group": 3, "id": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "label": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "shape": "dot", "size": 7}, {"group": 6, "id": "gan\u5de5\u827a", "label": "gan\u5de5\u827a", "shape": "dot", "size": 1}, {"group": 6, "id": "t/r\u7ec4\u4ef6\u8bbe\u8ba1", "label": "t/r\u7ec4\u4ef6\u8bbe\u8ba1", "shape": "dot", "size": 1}, {"group": 8, "id": "\u4e00\u7ef4\u5377\u79ef\u795e\u7ecf\u7f51\u7edc", "label": "\u4e00\u7ef4\u5377\u79ef\u795e\u7ecf\u7f51\u7edc", "shape": "dot", "size": 1}, {"group": 8, "id": "\u6ce8\u610f\u529b\u673a\u5236", "label": "\u6ce8\u610f\u529b\u673a\u5236", "shape": "dot", "size": 1}, {"group": 10, "id": "\u4f20\u7edf\u96f7\u8fbe\u4e0e\u901a\u4fe1\u7cfb\u7edf", "label": "\u4f20\u7edf\u96f7\u8fbe\u4e0e\u901a\u4fe1\u7cfb\u7edf", "shape": "dot", "size": 1}, {"group": 10, "id": "\u72ec\u7acb\u8bbe\u8ba1", "label": "\u72ec\u7acb\u8bbe\u8ba1", "shape": "dot", "size": 1}, {"group": 12, "id": "\u4fe1\u566a\u6bd410db", "label": "\u4fe1\u566a\u6bd410db", "shape": "dot", "size": 1}, {"group": 12, "id": "\u5e73\u5747\u8bc6\u522b\u738795.2%", "label": "\u5e73\u5747\u8bc6\u522b\u738795.2%", "shape": "dot", "size": 1}, {"group": 22, "id": "\u667a\u80fd\u8d85\u8868\u9762", "label": "\u667a\u80fd\u8d85\u8868\u9762", "shape": "dot", "size": 1}, {"group": 11, "id": "\u5546\u7528fpga", "label": "\u5546\u7528fpga", "shape": "dot", "size": 1}, {"group": 11, "id": "\u4fe1\u53f7\u5904\u7406\u677f\u5361\u8bbe\u8ba1", "label": "\u4fe1\u53f7\u5904\u7406\u677f\u5361\u8bbe\u8ba1", "shape": "dot", "size": 1}, {"group": 15, "id": "\u566a\u58f0\u7cfb\u6570\u22648db", "label": "\u566a\u58f0\u7cfb\u6570\u22648db", "shape": "dot", "size": 1}, {"group": 15, "id": "\u63a5\u6536\u901a\u9053", "label": "\u63a5\u6536\u901a\u9053", "shape": "dot", "size": 1}, {"group": 16, "id": "\u57ce\u5e02\u590d\u6742\u4ea4\u901a\u573a\u666f", "label": "\u57ce\u5e02\u590d\u6742\u4ea4\u901a\u573a\u666f", "shape": "dot", "size": 1}, {"group": 16, "id": "\u76ee\u6807\u8ddf\u8e2a\u8fde\u7eed\u6027\u63d0\u534725%", "label": "\u76ee\u6807\u8ddf\u8e2a\u8fde\u7eed\u6027\u63d0\u534725%", "shape": "dot", "size": 1}, {"group": 1, "id": "\u5b9e\u6d4bhrrp\u6570\u636e", "label": "\u5b9e\u6d4bhrrp\u6570\u636e", "shape": "dot", "size": 1}, {"group": 1, "id": "10,000\u4e2a\u6837\u672c", "label": "10,000\u4e2a\u6837\u672c", "shape": "dot", "size": 1}, {"group": 14, "id": "\u5de5\u4f5c\u9891\u738776-81ghz", "label": "\u5de5\u4f5c\u9891\u738776-81ghz", "shape": "dot", "size": 1}, {"group": 14, "id": "\u53d1\u5c04\u901a\u9053\u8f93\u51fa\u529f\u7387\u226512dbm", "label": "\u53d1\u5c04\u901a\u9053\u8f93\u51fa\u529f\u7387\u226512dbm", "shape": "dot", "size": 1}, {"group": 19, "id": "\u5f3a\u98ce\u3001\u9ad8\u6e7f\u5ea6\u73af\u5883", "label": "\u5f3a\u98ce\u3001\u9ad8\u6e7f\u5ea6\u73af\u5883", "shape": "dot", "size": 1}, {"group": 19, "id": "\u9632\u62a4\u7b49\u7ea7\u8bbe\u8ba1", "label": "\u9632\u62a4\u7b49\u7ea7\u8bbe\u8ba1", "shape": "dot", "size": 1}, {"group": 20, "id": "\u5fae\u901a\u9053\u6db2\u51b7\u6563\u70ed", "label": "\u5fae\u901a\u9053\u6db2\u51b7\u6563\u70ed", "shape": "dot", "size": 1}, {"group": 20, "id": "\u7ed3\u6e29\u63a7\u5236", "label": "\u7ed3\u6e29\u63a7\u5236", "shape": "dot", "size": 1}, {"group": 21, "id": "\u63a2\u6d4b\u5b9e\u9a8c", "label": "\u63a2\u6d4b\u5b9e\u9a8c", "shape": "dot", "size": 1}, {"group": 21, "id": "\u7535\u5b50\u5e72\u6270\u624b\u6bb5", "label": "\u7535\u5b50\u5e72\u6270\u624b\u6bb5", "shape": "dot", "size": 1}, {"group": 18, "id": "\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe", "label": "\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe", "shape": "dot", "size": 1}, {"group": 18, "id": "\u5916\u573a\u52a8\u6001\u6027\u80fd\u6d4b\u8bd5", "label": "\u5916\u573a\u52a8\u6001\u6027\u80fd\u6d4b\u8bd5", "shape": "dot", "size": 1}, {"group": 23, "id": "\u673a\u68b0\u626b\u63cf\u6c14\u8c61\u96f7\u8fbe", "label": "\u673a\u68b0\u626b\u63cf\u6c14\u8c61\u96f7\u8fbe", "shape": "dot", "size": 1}, {"group": 23, "id": "\u8239\u53ea\u6643\u52a8\u73af\u5883\u6570\u636e\u5931\u771f", "label": "\u8239\u53ea\u6643\u52a8\u73af\u5883\u6570\u636e\u5931\u771f", "shape": "dot", "size": 1}, {"group": 7, "id": "\u6beb\u7c73\u6ce2\u96f7\u8fbe", "label": "\u6beb\u7c73\u6ce2\u96f7\u8fbe", "shape": "dot", "size": 1}, {"group": 7, "id": "pcb\u677f\u7ea7\u4fe1\u53f7\u5b8c\u6574\u6027\u4eff\u771f", "label": "pcb\u677f\u7ea7\u4fe1\u53f7\u5b8c\u6574\u6027\u4eff\u771f", "shape": "dot", "size": 1}, {"group": 13, "id": "\u7a00\u758f\u9635\u5217\u5929\u7ebf\u6280\u672f", "label": "\u7a00\u758f\u9635\u5217\u5929\u7ebf\u6280\u672f", "shape": "dot", "size": 1}, {"group": 13, "id": "\u51cf\u5c11t/r\u7ec4\u4ef6\u6570\u91cf", "label": "\u51cf\u5c11t/r\u7ec4\u4ef6\u6570\u91cf", "shape": "dot", "size": 1}, {"group": 24, "id": "\u7cfb\u7edf\u529f\u8017", "label": "\u7cfb\u7edf\u529f\u8017", "shape": "dot", "size": 1}, {"group": 24, "id": "\u964d\u4f4e30%", "label": "\u964d\u4f4e30%", "shape": "dot", "size": 1}, {"group": 17, "id": "\u8d85\u8868\u9762\u7f16\u7801\u4f18\u5316\u7b97\u6cd5", "label": "\u8d85\u8868\u9762\u7f16\u7801\u4f18\u5316\u7b97\u6cd5", "shape": "dot", "size": 1}, {"group": 17, "id": "\u57fa\u7ad9\u4e0e\u96f7\u8fbe\u4fe1\u53f7\u534f\u540c\u5904\u7406", "label": "\u57fa\u7ad9\u4e0e\u96f7\u8fbe\u4fe1\u53f7\u534f\u540c\u5904\u7406", "shape": "dot", "size": 1}, {"group": 9, "id": "\u9ad8\u5206\u8fa8\u7387\u8ddd\u79bb\u50cf", "label": "\u9ad8\u5206\u8fa8\u7387\u8ddd\u79bb\u50cf", "shape": "dot", "size": 1}, {"group": 9, "id": "\u4f20\u7edf\u8bc6\u522b\u65b9\u6cd5\u7a33\u5065\u6027\u4e0d\u8db3", "label": "\u4f20\u7edf\u8bc6\u522b\u65b9\u6cd5\u7a33\u5065\u6027\u4e0d\u8db3", "shape": "dot", "size": 1}]);
+                  edges = new vis.DataSet([{"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "doherty\u529f\u7387\u653e\u5927\u5668", "width": 0.5}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "width": 0.75}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u9700\u5b9e\u73b0360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6\uff0c\u4ee5\u9002\u5e94\u81ea\u52a8\u9a7e\u9a76\u7b49\u7ea7\u63d0\u5347\u7684\u9700\u6c42\u3002,contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.75}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "360\u5ea6\u65e0\u6b7b\u89d2\u8986\u76d6", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "doherty\u529f\u7387\u653e\u5927\u5668", "width": 0.5}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "width": 0.75}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "\u91c7\u752864\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf\uff0c\u901a\u8fc7\u7535\u5b50\u63a7\u5236\u76f8\u4f4d\u5dee\u8c03\u6574\u6ce2\u675f\u65b9\u5411\uff0c\u5b9e\u73b0\u9ad8\u589e\u76ca\u4e0e\u5168\u5411\u8986\u76d6\u3002,contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.75}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "64\u901a\u9053\u76f8\u63a7\u9635\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "77ghz\u8f66\u8f7d\u96f7\u8fbe", "title": "77GHz\u8f66\u8f7d\u96f7\u8fbe\u9700\u5c06\u591a\u4e2a\u5c04\u9891\u529f\u80fd\u96c6\u6210\u4e8eSiGe BiCMOS\u5355\u7247\u96c6\u6210\u7535\u8def\u3002", "to": "sige bicmos\u5355\u7247\u96c6\u6210\u7535\u8def", "width": 1.0}, {"from": "dbscan\u805a\u7c7b\u7b97\u6cd5", "title": "\u7b97\u6cd5\u6539\u8fdb\u7ed3\u5408DBSCAN\u805a\u7c7b\u7b97\u6cd5\u4e0e\u6539\u8fdb\u7684\u8054\u5408\u6982\u7387\u6570\u636e\u5173\u8054\u6ee4\u6ce2\u5668\u3002", "to": "\u8054\u5408\u6982\u7387\u6570\u636e\u5173\u8054\u6ee4\u6ce2\u5668", "width": 1.0}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "width": 1.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "hamming\u7a97\u51fd\u6570", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u4e8c\u6b21fft\u5904\u7406", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 1.0}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u6297\u5e72\u6270\u6d4b\u8bd5", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 1.0}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u6c14\u8c61\u63a2\u6d4b", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 5.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 1.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "width": 0.75}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "\u300aDoherty\u529f\u7387\u653e\u5927\u5668\u5728\u96f7\u8fbe\u5c04\u9891\u524d\u7aef\u7684\u8bbe\u8ba1\u4e0e\u4f18\u5316\u300b\u5c5e\u4e8e\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u4e2d\u7684\u5c04\u9891\u786c\u4ef6\u9886\u57df\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "doherty\u529f\u7387\u653e\u5927\u5668\u8bbe\u8ba1", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "hamming\u7a97\u51fd\u6570", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u4e8c\u6b21fft\u5904\u7406", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 1.5}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u6297\u5e72\u6270\u6d4b\u8bd5", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 1.5}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u6c14\u8c61\u63a2\u6d4b", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 2.25}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 8.25}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 2.25}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "title": "\u300aFMCW\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316\u4e0e\u5b9e\u9a8c\u9a8c\u8bc1\u300b\u5c5e\u4e8e\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u4e2d\u7684\u4fe1\u53f7\u5904\u7406\u9886\u57df\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "fmcw\u96f7\u8fbe\u4fe1\u53f7\u5904\u7406\u7b97\u6cd5\u4f18\u5316", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "gan\u5de5\u827a", "title": "\u57fa\u4e8eGaN\u5de5\u827a\u8bbe\u8ba1T/R\u7ec4\u4ef6\uff0c\u6ee1\u8db3\u9ad8\u529f\u7387\u3001\u9ad8\u6548\u7387\u3001\u9ad8\u53ef\u9760\u6027\u8981\u6c42\u3002", "to": "t/r\u7ec4\u4ef6\u8bbe\u8ba1", "width": 1.0}, {"from": "hamming\u7a97\u51fd\u6570", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "hamming\u7a97\u51fd\u6570", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "hamming\u7a97\u51fd\u6570", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "hamming\u7a97\u51fd\u6570", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "hamming\u7a97\u51fd\u6570", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u4e00\u7ef4\u5377\u79ef\u795e\u7ecf\u7f51\u7edc", "title": "\u4e00\u7ef4\u5377\u79ef\u795e\u7ecf\u7f51\u7edc\u6a21\u578b\u5f15\u5165\u6ce8\u610f\u529b\u673a\u5236\uff0c\u4ee5\u4e13\u6ce8\u4e8eHRRP\u4e2d\u7684\u5173\u952e\u5224\u522b\u6027\u7279\u5f81\u3002", "to": "\u6ce8\u610f\u529b\u673a\u5236", "width": 1.0}, {"from": "\u4e8c\u6b21fft\u5904\u7406", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "\u4e8c\u6b21fft\u5904\u7406", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u4e8c\u6b21fft\u5904\u7406", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u4e8c\u6b21fft\u5904\u7406", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u4e8c\u6b21fft\u5904\u7406", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u4f20\u7edf\u96f7\u8fbe\u4e0e\u901a\u4fe1\u7cfb\u7edf", "title": "\u4f20\u7edf\u96f7\u8fbe\u4e0e\u901a\u4fe1\u7cfb\u7edf\u56e0\u72ec\u7acb\u8bbe\u8ba1\u5bfc\u81f4\u9891\u8c31\u8d44\u6e90\u7d27\u5f20\u548c\u8bbe\u5907\u5197\u4f59\u3002", "to": "\u72ec\u7acb\u8bbe\u8ba1", "width": 1.0}, {"from": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "title": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u5305\u62ec\u4fe1\u53f7\u5904\u7406\u9886\u57df\uff0c\u8be5\u9886\u57df\u7814\u7a76\u96f7\u8fbe\u4fe1\u53f7\u7b97\u6cd5\u4f18\u5316\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u4fe1\u53f7\u5904\u7406\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u4fe1\u566a\u6bd410db", "title": "\u5728\u4fe1\u566a\u6bd4\u4e3a10dB\u6761\u4ef6\u4e0b\uff0c\u5e73\u5747\u8bc6\u522b\u7387\u8fbe\u523095.2%\uff0c\u663e\u8457\u4f18\u4e8e\u4f20\u7edf\u65b9\u6cd5\u3002", "to": "\u5e73\u5747\u8bc6\u522b\u738795.2%", "width": 1.0}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "width": 0.5}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "\u63d0\u51fa\u57fa\u4e8e\u667a\u80fd\u8d85\u8868\u9762\u7684\u5168\u606fMIMO\u96f7\u8fbe\u67b6\u6784\uff0c\u901a\u8fc7\u7f16\u7a0b\u63a7\u5236\u8d85\u8868\u9762\u5355\u5143\u52a8\u6001\u8c03\u63a7\u7535\u78c1\u6ce2\u524d\u5411\u3002,contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 1.5}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u5168\u606fmimo\u96f7\u8fbe\u67b6\u6784", "title": "\u667a\u80fd\u8d85\u8868\u9762\u7528\u4e8e\u6784\u5efa\u5168\u606fMIMO\u96f7\u8fbe\u67b6\u6784\uff0c\u901a\u8fc7\u7f16\u7a0b\u63a7\u5236\u5355\u5143\u72b6\u6001\u52a8\u6001\u8c03\u63a7\u7535\u78c1\u6ce2\u524d\u5411\u3002", "to": "\u667a\u80fd\u8d85\u8868\u9762", "width": 1.0}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u6297\u5e72\u6270\u6d4b\u8bd5", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 1.0}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u6c14\u8c61\u63a2\u6d4b", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 5.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 1.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.5}, {"from": "\u5168\u6781\u5316\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.5}, {"from": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u529f\u7387\u6548\u7387\u63d0\u534740%", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u52a8\u6001\u76ee\u6807\u6d4b\u8bd5", "title": "\u6d4b\u8bd5\u65b9\u6cd5\u4e2d\u4f7f\u7528\u65e0\u4eba\u673a\u9776\u6807\u6a21\u62df\u9ad8\u901f\u79fb\u52a8\u76ee\u6807\uff0c\u7528\u4e8e\u9a8c\u8bc1\u76ee\u6807\u68c0\u6d4b\u6027\u80fd\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 1.75}, {"from": "\u5546\u7528fpga", "title": "\u7cfb\u7edf\u57fa\u4e8e\u5546\u7528FPGA\u8bbe\u8ba1\u4fe1\u53f7\u5904\u7406\u677f\u5361\u3002", "to": "\u4fe1\u53f7\u5904\u7406\u677f\u5361\u8bbe\u8ba1", "width": 1.0}, {"from": "\u566a\u58f0\u7cfb\u6570\u22648db", "title": "\u63a5\u6536\u901a\u9053\u566a\u58f0\u7cfb\u6570\u22648dB\uff0c\u6ee1\u8db3\u9ad8\u6027\u80fd\u5c04\u9891\u9700\u6c42\u3002", "to": "\u63a5\u6536\u901a\u9053", "width": 1.0}, {"from": "\u57ce\u5e02\u590d\u6742\u4ea4\u901a\u573a\u666f", "title": "\u5728\u57ce\u5e02\u590d\u6742\u4ea4\u901a\u573a\u666f\u4e2d\uff0c\u76ee\u6807\u8ddf\u8e2a\u8fde\u7eed\u6027\u4e0e\u7a33\u5b9a\u6027\u63d0\u5347\u7ea625%\u3002", "to": "\u76ee\u6807\u8ddf\u8e2a\u8fde\u7eed\u6027\u63d0\u534725%", "width": 1.0}, {"from": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u591a\u76ee\u6807\u573a\u666f\u8ddd\u79bb\u4e0e\u901f\u5ea6\u6d4b\u91cf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "title": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u5305\u62ec\u5929\u7ebf\u6280\u672f\u9886\u57df\uff0c\u8be5\u9886\u57df\u7814\u7a76\u5929\u7ebf\u589e\u76ca\u4e0e\u65b9\u5411\u56fe\u4f18\u5316\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u5929\u7ebf\u6280\u672f\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u5b9e\u6d4bhrrp\u6570\u636e", "title": "\u4f7f\u7528\u4e09\u7c7b\u98de\u673a\u76ee\u6807\u7684\u5b9e\u6d4bHRRP\u6570\u636e\uff08\u5171\u8ba110,000\u4e2a\u6837\u672c\uff09\u8fdb\u884c\u8bad\u7ec3\u4e0e\u6d4b\u8bd5\u3002", "to": "10,000\u4e2a\u6837\u672c", "width": 1.0}, {"from": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "title": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u5305\u62ec\u5c04\u9891\u786c\u4ef6\u9886\u57df\uff0c\u8be5\u9886\u57df\u7814\u7a76\u96f7\u8fbe\u524d\u7aef\u786c\u4ef6\u8bbe\u8ba1\u4e0e\u4f18\u5316\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u5c04\u9891\u786c\u4ef6\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u5de5\u4f5c\u9891\u738776-81ghz", "title": "\u82af\u7247\u5de5\u4f5c\u9891\u7387\u4e3a76-81GHz\uff0c\u53d1\u5c04\u901a\u9053\u8f93\u51fa\u529f\u7387\u226512dBm\u3002", "to": "\u53d1\u5c04\u901a\u9053\u8f93\u51fa\u529f\u7387\u226512dbm", "width": 1.0}, {"from": "\u5f3a\u98ce\u3001\u9ad8\u6e7f\u5ea6\u73af\u5883", "title": "\u7cfb\u7edf\u5728\u5f3a\u98ce\u3001\u9ad8\u6e7f\u5ea6\u73af\u5883\u4e0b\u8fdb\u884c\u9632\u62a4\u7b49\u7ea7\u8bbe\u8ba1\u4ee5\u9002\u5e94\u6076\u52a3\u5de5\u51b5\u3002", "to": "\u9632\u62a4\u7b49\u7ea7\u8bbe\u8ba1", "width": 1.0}, {"from": "\u5fae\u901a\u9053\u6db2\u51b7\u6563\u70ed", "title": "\u91c7\u7528\u5fae\u901a\u9053\u6db2\u51b7\u6563\u70ed\u8bbe\u8ba1\uff0c\u786e\u4fdd\u7ed3\u6e29\u63a7\u5236\u5728\u5b89\u5168\u8303\u56f4\u5185\u3002", "to": "\u7ed3\u6e29\u63a7\u5236", "width": 1.0}, {"from": "\u6297\u5e72\u6270\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u6297\u5e72\u6270\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u6297\u5e72\u6270\u6d4b\u8bd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u6297\u5e72\u6270\u6d4b\u8bd5", "title": "\u65bd\u52a0\u963b\u585e\u5f0f/\u6b3a\u9a97\u5f0f\u5e72\u6270\uff0c\u8bc4\u4f30\u7cfb\u7edf\u5728\u590d\u6742\u7535\u78c1\u73af\u5883\u4e0b\u7684\u9c81\u68d2\u6027\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 1.75}, {"from": "\u63a2\u6d4b\u5b9e\u9a8c", "title": "\u63a2\u6d4b\u5b9e\u9a8c\u5f15\u5165\u591a\u79cd\u7535\u5b50\u5e72\u6270\u624b\u6bb5\u4ee5\u8bc4\u4f30\u7cfb\u7edf\u6297\u5e72\u6270\u80fd\u529b\u3002", "to": "\u7535\u5b50\u5e72\u6270\u624b\u6bb5", "width": 1.0}, {"from": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "title": "contextual proximity", "to": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "width": 0.5}, {"from": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "title": "\u7ed3\u5408\u667a\u80fd\u53cd\u5c04\u9762\uff08ISR\uff09\u6280\u672f\uff0c\u52a8\u6001\u4f18\u5316\u4fe1\u53f7\u4f20\u64ad\u8def\u5f84\uff0c\u589e\u5f3a\u6297\u5e72\u6270\u80fd\u529b\u3002,contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.75}, {"from": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u667a\u80fd\u53cd\u5c04\u9762\uff08isr\uff09\u6280\u672f", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u6c14\u8c61\u63a2\u6d4b", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 1.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 5.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 1.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.5}, {"from": "\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.5}, {"from": "\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe", "title": "\u5916\u573a\u52a8\u6001\u6027\u80fd\u6d4b\u8bd5\u7528\u4e8e\u9a8c\u8bc1\u6709\u6e90\u76f8\u63a7\u9635\u96f7\u8fbe\u5728\u771f\u5b9e\u98de\u884c\u73af\u5883\u4e0b\u7684\u63a2\u6d4b\u4e0e\u6297\u5e72\u6270\u80fd\u529b\u3002", "to": "\u5916\u573a\u52a8\u6001\u6027\u80fd\u6d4b\u8bd5", "width": 1.0}, {"from": "\u673a\u68b0\u626b\u63cf\u6c14\u8c61\u96f7\u8fbe", "title": "\u673a\u68b0\u626b\u63cf\u6c14\u8c61\u96f7\u8fbe\u5728\u8239\u53ea\u6643\u52a8\u73af\u5883\u4e0b\u6613\u51fa\u73b0\u6570\u636e\u5931\u771f\u95ee\u9898\u3002", "to": "\u8239\u53ea\u6643\u52a8\u73af\u5883\u6570\u636e\u5931\u771f", "width": 1.0}, {"from": "\u6beb\u7c73\u6ce2\u96f7\u8fbe", "title": "\u6beb\u7c73\u6ce2\u96f7\u8fbe\u8fdb\u884cPCB\u677f\u7ea7\u4fe1\u53f7\u5b8c\u6574\u6027\u4eff\u771f\u4e0e\u6d4b\u8bd5\u7814\u7a76\u3002", "to": "pcb\u677f\u7ea7\u4fe1\u53f7\u5b8c\u6574\u6027\u4eff\u771f", "width": 1.0}, {"from": "\u6c14\u8c61\u63a2\u6d4b", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "width": 0.75}, {"from": "\u6c14\u8c61\u63a2\u6d4b", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u6c14\u8c61\u63a2\u6d4b", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 8.25}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 2.25}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "title": "\u300a\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u589e\u76ca\u4e0e\u65b9\u5411\u56fe\u4f18\u5316\u7814\u7a76\u300b\u5c5e\u4e8e\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u4e2d\u7684\u5929\u7ebf\u6280\u672f\u9886\u57df\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u6c7d\u8f66\u6beb\u7c73\u6ce2\u96f7\u8fbe\u5929\u7ebf\u4f18\u5316", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "title": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u5305\u62ec\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df\uff0c\u8be5\u9886\u57df\u7814\u7a76\u5916\u573a\u8bd5\u9a8c\u4e0e\u6297\u5e72\u6270\u6027\u80fd\u9a8c\u8bc1\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u6d4b\u8bd5\u9a8c\u8bc1\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u7a00\u758f\u9635\u5217\u5929\u7ebf\u6280\u672f", "title": "\u7a00\u758f\u9635\u5217\u5929\u7ebf\u6280\u672f\u5728\u4fdd\u8bc1\u63a2\u6d4b\u6027\u80fd\u7684\u540c\u65f6\u5927\u5e45\u51cf\u5c11T/R\u7ec4\u4ef6\u6570\u91cf\u3002", "to": "\u51cf\u5c11t/r\u7ec4\u4ef6\u6570\u91cf", "width": 1.0}, {"from": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u7ca4\u6e2f\u6fb3\u5927\u6e7e\u533a\u5929\u6c14\u89c2\u6d4b\u7f51", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u7cfb\u7edf\u529f\u8017", "title": "\u7406\u8bba\u4e0a\u7cfb\u7edf\u529f\u8017\u53ef\u964d\u4f4e30%\uff0c\u5e76\u901a\u8fc7\u4eff\u771f\u9a8c\u8bc1\u5728\u8f66\u8f86\u7f16\u961f\u611f\u77e5\u4e0eV2X\u901a\u4fe1\u573a\u666f\u4e0b\u7684\u53ef\u884c\u6027\u3002", "to": "\u964d\u4f4e30%", "width": 1.0}, {"from": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "title": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df\u5305\u62ec\u7cfb\u7edf\u67b6\u6784\u9886\u57df\uff0c\u8be5\u9886\u57df\u7814\u7a76\u96f7\u8fbe\u6574\u4f53\u67b6\u6784\u8bbe\u8ba1\u3002,contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 3.75}, {"from": "\u7cfb\u7edf\u67b6\u6784\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u8d85\u8868\u9762\u7f16\u7801\u4f18\u5316\u7b97\u6cd5", "title": "\u8d85\u8868\u9762\u7f16\u7801\u4f18\u5316\u7b97\u6cd5\u652f\u6301\u57fa\u7ad9\u4e0e\u96f7\u8fbe\u7684\u4fe1\u53f7\u534f\u540c\u5904\u7406\u6d41\u7a0b\u3002", "to": "\u57fa\u7ad9\u4e0e\u96f7\u8fbe\u4fe1\u53f7\u534f\u540c\u5904\u7406", "width": 1.0}, {"from": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "width": 2.75}, {"from": "\u96f7\u8fbe\u5c04\u9891\u524d\u7aef", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 0.75}, {"from": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "width": 8.25}, {"from": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 2.75}, {"from": "\u96f7\u8fbe\u7814\u53d1\u7ec6\u5206\u9886\u57df", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 2.75}, {"from": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "title": "contextual proximity", "to": "\u96f7\u8fbe\u7cfb\u7edf\u67b6\u6784\u521b\u65b0\u7814\u7a76", "width": 0.75}, {"from": "\u96f7\u8fbe\u7cfb\u7edf\u5916\u573a\u8bd5\u9a8c\u65b9\u6cd5", "title": "contextual proximity", "to": "\u9762\u54116g\u7684\u667a\u80fd\u8d85\u8868\u9762\u8d4b\u80fd\u7684\u901a\u4fe1\u611f\u77e5\u4e00\u4f53\u5316\u96f7\u8fbe\u67b6\u6784\u7814\u7a76", "width": 0.75}, {"from": "\u9ad8\u5206\u8fa8\u7387\u8ddd\u79bb\u50cf", "title": "\u9ad8\u5206\u8fa8\u7387\u8ddd\u79bb\u50cf\u5305\u542b\u4e30\u5bcc\u76ee\u6807\u7ed3\u6784\u4fe1\u606f\uff0c\u4f46\u4f20\u7edf\u8bc6\u522b\u65b9\u6cd5\u5728\u590d\u6742\u73af\u5883\u4e0b\u7a33\u5065\u6027\u4e0d\u8db3\u3002", "to": "\u4f20\u7edf\u8bc6\u522b\u65b9\u6cd5\u7a33\u5065\u6027\u4e0d\u8db3", "width": 1.0}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.015,
+            "damping": 0.4,
+            "gravitationalConstant": -31,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+                  // if this network requires displaying the configure window,
+                  // put it in its div
+                  options.configure["container"] = document.getElementById("config");
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,21 @@
+node_1|node_2|edge|chunk_id
+着陆器|vikram|关系：名称|ed1c0c13be9c437ba600ce90f7a6ee25
+着陆器|月球车|关系：包装在一个六轮摇臂式轮驱动组件上|ed1c0c13be9c437ba600ce90f7a6ee25
+着陆器|太阳能电池阵|关系：装备|ed1c0c13be9c437ba600ce90f7a6ee25
+着陆器|反作用轮|关系：控制姿态|ed1c0c13be9c437ba600ce90f7a6ee25
+着陆器|推力系统|关系：提供推力|ed1c0c13be9c437ba600ce90f7a6ee25
+着陆器|印度深空网（indian deep space network，idsn）|关系：与之通信的方式|ed1c0c13be9c437ba600ce90f7a6ee25
+月球地震活动仪|ilsa|关系：携带|ed1c0c13be9c437ba600ce90f7a6ee25
+月球地震活动仪|绕月高敏感电离层和大气的无线电分析-朗缪尔探测器（radio anatomy of moon bound hypersensitive ionosphere and atmosphere-langmuir probe，rambha-lp）|关系：携带|ed1c0c13be9c437ba600ce90f7a6ee25
+绕月高敏感电离层和大气的无线电分析-朗缪尔探测器（radio anatomy of moon bound hypersensitive ionosphere and atmosphere-langmuir probe，rambha-lp）|无线电分析器|关系：装备|ed1c0c13be9c437ba600ce90f7a6ee25
+月球车|智慧号（pragyan）|关系：包装在一个六轮摇臂式轮驱动组件上|ed1c0c13be9c437ba600ce90f7a6ee25
+月球车|太阳能电池阵|关系：装备|ed1c0c13be9c437ba600ce90f7a6ee25
+月球车|导航相机|关系：装备|ed1c0c13be9c437ba600ce90f7a6ee25
+月球车|激光诱导分解光谱仪（laser induced breakdown spectroscope，libs）|关系：携带|ed1c0c13be9c437ba600ce90f7a6ee25
+a concept from extracted ontology|a related concept from extracted ontology|relationship between the two concepts, node_1 and node_2 in one or two sentences|eb2139d3076c4791a97f07e225eef446
+monthly mission|concept of exploring the moon|Monthly missions are focused on exploring the moon|eb2139d3076c4791a97f07e225eef446
+commercial lunar mission|lunar mission as a business|Commercial lunar missions are becoming more popular and active in recent years|eb2139d3076c4791a97f07e225eef446
+isro|indian space research organization|ISRO is actively participating in the exploration of the moon|eb2139d3076c4791a97f07e225eef446
+ariane group|commercial lunar mission service provider|ArianeGroup provides commercial lunar mission services|eb2139d3076c4791a97f07e225eef446
+arianespace|commercial space transportation service provider|Arianespace offers space transportation services for commercial lunar missions|eb2139d3076c4791a97f07e225eef446
+cnes|french national center for space studies|CNES is actively participating in the exploration of the moon|eb2139d3076c4791a97f07e225eef446

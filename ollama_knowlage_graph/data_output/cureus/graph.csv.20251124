@@ -1,0 +1,17 @@
+node_1|node_2|edge|chunk_id
+着陆器|月球车|关系：着陆器和月球车是同一个任务的组成部分|e036d3684077476eb52f04b8e50a4439
+着陆器|太阳能电池阵|关系：着陆器使用太阳能来为自身提供动力|e036d3684077476eb52f04b8e50a4439
+着陆器|反作用轮|关系：着陆器使用反作用轮来控制姿态|e036d3684077476eb52f04b8e50a4439
+着陆器|推进模块|关系：着陆器使用推进模块来改变自身的速度和方向|e036d3684077476eb52f04b8e50a4439
+着陆器|印度深空网（idsn）|关系：着陆器可以与印度深空网进行通信|e036d3684077476eb52f04b8e50a4439
+月球地震活动仪（ilsa）|着陆器|关系：着陆器携带月球地震活动仪|e036d3684077476eb52f04b8e50a4439
+绕月高敏感电离层和大气的无线电分析-朗缪尔探测器（rambha-lp）|着陆器|关系：着陆器携带无线电分析-朗缪尔探测器|e036d3684077476eb52f04b8e50a4439
+月球车|智慧号（pragyan）|关系：月球车被命名为智慧号|e036d3684077476eb52f04b8e50a4439
+月球车|太阳能电池阵|关系：月球车使用太阳能来为自身提供动力|e036d3684077476eb52f04b8e50a4439
+月球车|导航相机|关系：月球车通过导航相机进行定位和目标追踪|e036d3684077476eb52f04b8e50a4439
+月球车|阿尔法粒子x射线光谱仪（apxs）|关系：月球车携带阿尔法粒子X射线光谱仪|e036d3684077476eb52f04b8e50a4439
+月球车|激光诱导分解光谱仪（libs）|关系：月球车携带激光诱导分解光谱仪|e036d3684077476eb52f04b8e50a4439
+a concept from extracted ontology|a related concept from extracted ontology|relationship between the two concepts, node_1 and node_2 in one or two sentences|d4ba389bcd52402ba0dd03de6fbb89b1
+深空探测任务|政治意义|relationship between the two concepts, node_1 and node_2 in sentence 3|d4ba389bcd52402ba0dd03de6fbb89b1
+美国|科学探测目标|relationship between the two concepts, node_1 and node_2 in sentence 6|d4ba389bcd52402ba0dd03de6fbb89b1
+印度|成本低廉|relationship between the two concepts, node_1 and node_2 in sentence 5|d4ba389bcd52402ba0dd03de6fbb89b1
